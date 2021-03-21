@@ -1,0 +1,48 @@
+{
+    "title": {
+        "css_selector":"h1#firstHeading",
+        "attribute":"textContent"
+    },
+    "img": {
+        "css_selector": {
+            "selector":"div#pi-tab-0",
+            "css_selector": "img"
+        },
+        "attribute":"src"
+    },
+    "birthday": {
+        "css_selector": {
+            "selector":"div[data-source='birthday']",
+            "xpath": ".//div/a"
+        },
+        "attribute":"textContent"
+    },
+    "rarity": {
+        "css_selector": {
+            "selector":"td[data-source='rarity']",
+            "xpath": ".//img"
+        },
+        "attribute":"alt"
+    },
+    "element": {
+        "css_selector": {
+            "selector":"td[data-source='element']",
+            "xpath": ".//span/a"
+        },
+        "attribute":"title"
+    },
+    "weapon_type": {
+        "css_selector": {
+            "selector":"td[data-source='weapon']",
+            "xpath": ".//span/a"
+        },
+        "attribute":"title"
+    },
+    "location": {
+        "css_selector": {
+            "selector":"div[data-source='region']",
+            "xpath": ".//div/a"
+        },
+        "attribute":"title"
+    }
+}
