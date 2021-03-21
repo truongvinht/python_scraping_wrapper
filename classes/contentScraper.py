@@ -49,25 +49,29 @@ class ContentScraper:
         KEY_XPATH = 'xpath'
         KEY_SELECTOR = 'selector'
 
-        if KEY_CSS_SELECTOR in content_map:
-            # css_selector
-            selector = content_map[KEY_CSS_SELECTOR]
+        # prevent error by ignoring missing web elements
+        try:
+            if KEY_CSS_SELECTOR in content_map:
+                # css_selector
+                selector = content_map[KEY_CSS_SELECTOR]
 
-            if isinstance(selector, str):
-                return node.find_element_by_css_selector(selector)
-            else:
-                next_node = node.find_element_by_css_selector(selector[KEY_SELECTOR])
-                return self.node_selector(next_node, selector)
-        elif KEY_XPATH in content_map:
-            # xpath
-            selector = content_map[KEY_XPATH]
+                if isinstance(selector, str):
+                    return node.find_element_by_css_selector(selector)
+                else:
+                    next_node = node.find_element_by_css_selector(selector[KEY_SELECTOR])
+                    return self.node_selector(next_node, selector)
+            elif KEY_XPATH in content_map:
+                # xpath
+                selector = content_map[KEY_XPATH]
 
-            if isinstance(selector, str):
-                return node.find_element_by_xpath(selector)
-            else:
-                next_node = node.find_element_by_xpath(selector[KEY_SELECTOR])
-                return self.node_selector(next_node, selector)
-
+                if isinstance(selector, str):
+                    return node.find_element_by_xpath(selector)
+                else:
+                    next_node = node.find_element_by_xpath(selector[KEY_SELECTOR])
+                    return self.node_selector(next_node, selector)
+        except NoSuchElementException:
+            # element not found
+            return None
         return None
     def close(self):
         logging.debug('close driver connection')
