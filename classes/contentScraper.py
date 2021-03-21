@@ -10,7 +10,7 @@ class ContentScraper:
         logging.debug('init ContentScraper')
         with open(json_path) as json_file:
             self.json_page = json.load(json_file)
-        # print(self.json_page)
+        
         # target page for scraping
         self.url = url
 
@@ -42,25 +42,34 @@ class ContentScraper:
                 content[key] = node.get_attribute(content_desc['attribute'])
         return content
     def node_selector(self, node, content_map):
+        logging.debug('node_selector: ' + str(content_map))
 
-        if 'css_selector' in content_map:
-            selector = content_map['css_selector']
+        # key from json
+        KEY_CSS_SELECTOR = 'css_selector'
+        KEY_XPATH = 'xpath'
+        KEY_SELECTOR = 'selector'
+
+        if KEY_CSS_SELECTOR in content_map:
+            # css_selector
+            selector = content_map[KEY_CSS_SELECTOR]
 
             if isinstance(selector, str):
                 return node.find_element_by_css_selector(selector)
             else:
-                next_node = node.find_element_by_css_selector(selector["selector"])
+                next_node = node.find_element_by_css_selector(selector[KEY_SELECTOR])
                 return self.node_selector(next_node, selector)
-        elif 'xpath' in content_map:
-            selector = content_map['xpath']
+        elif KEY_XPATH in content_map:
+            # xpath
+            selector = content_map[KEY_XPATH]
 
             if isinstance(selector, str):
                 return node.find_element_by_xpath(selector)
             else:
-                next_node = node.find_element_by_xpath(selector["selector"])
+                next_node = node.find_element_by_xpath(selector[KEY_SELECTOR])
                 return self.node_selector(next_node, selector)
 
         return None
     def close(self):
+        logging.debug('close driver connection')
         self.driver.close()
         self.driver = None
