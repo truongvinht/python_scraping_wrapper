@@ -1,4 +1,3 @@
-
 from classes.contentScraper import ContentScraper
 
 # example for Fandom
