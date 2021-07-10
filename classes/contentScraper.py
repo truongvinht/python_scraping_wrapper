@@ -1,30 +1,88 @@
 import logging
 import json
 import time
+import requests
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.remote.webelement import WebElement
 
+# Scraping Tool
 class ContentScraper:
-    def __init__(self, url, json_path):
+    # init with json-format
+    def __init__(self):
         logging.debug('init ContentScraper')
-        with open(json_path) as json_file:
-            self.json_page = json.load(json_file)
-        
-        # target page for scraping
-        self.url = url
+
+        # json configuration map for scraping
+        self.json_page = None
 
         # init chrome web driver 
         options = webdriver.chrome.options.Options()
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-setuid-sandbox")
         options.add_argument("--disable-extensions")
+        options.add_experimental_option("prefs", {
+            "download.default_directory": "./tmp/",
+            "download.prompt_for_download": False,
+            "download.directory_upgrade": True,
+            "safebrowsing_for_trusted_sources_enabled": False,
+            "safebrowsing.enabled": False
+        })
         self.driver = webdriver.Chrome(options=options)
-        self.driver.get(self.url)
+
+    # load json file for scraping
+    def loadJson(self, json_path):
+        with open(json_path) as json_file:
+            self.json_page = json.load(json_file)
+
+    # load target page
+    def load(self, url):
+        # target page for scraping
+        self.driver.get(url)
+
+    # fill in user name, password and continue
+    def site_login(self, userField, user, pwdField, pwd, submitField):
+        self.driver.find_element_by_xpath(userField).send_keys(user)
+        self.driver.find_element_by_xpath(pwdField).send_keys(pwd)
+
+        self.click_xpath(submitField)
+    
+    # remove all cookies
+    def clear_cookies(self):
+        self.driver.delete_all_cookies()
+    
+    # execute click event on element 
+    def click_xpath(self, xpath):
+        self.driver.find_element_by_xpath(xpath).click()
+
+    # create a screenshot with width and size
+    def create_screenshot(self, name, width, height):
+        self.driver.set_window_size(width, height)
+        time.sleep(2)
+        self.driver.save_screenshot(name)
+
+    # save page source as file
+    def save_webpage(self, filename):
+        filehandle = open(filename, 'w')
+        filehandle.write(self.page_source())
+        filehandle.close()
+    
+    # download file
+    def download_file_as(self, url, name):
+        self.load(url)
+        r = requests.get(url)
+        with open(name, 'wb') as outfile:
+            outfile.write(r.content)
+
+    # page source
+    def page_source(self):
+        return self.driver.page_source
+    
+
+    # scrape page based on configured json
     def scraping(self):
-        logging.debug('scraping')
+        logging.debug('scraping: ' + self.driver.current_url)
 
         content={}
 
@@ -50,9 +108,13 @@ class ContentScraper:
                     content[key] = entries
             elif len(node_list) > 0:
                 content[key] = node_list
+
+        logging.info('scraping completed!')
         return content
+    
+    # process content
     def node_selector(self, node, content_map):
-        logging.info('node_selector: ' + str(content_map))
+        logging.debug('node_selector: ' + str(content_map))
 
         # key from json
         KEY_CSS_SELECTOR = 'css_selector'
@@ -61,6 +123,7 @@ class ContentScraper:
         KEY_PROPERTY = 'property'
         KEY_PROPERTY_FILTER = 'property_filter'
         KEY_INDEX = 'index'
+        KEY_SKIPPING = 'skipping_key'
 
         results = []
 
@@ -103,14 +166,30 @@ class ContentScraper:
                             if KEY_PROPERTY in selector:
                                 for prop_node in next_nodes:
                                     for attr in prop_node.get_property(selector[KEY_PROPERTY]):
-                                        results.append(attr[selector[KEY_PROPERTY_FILTER]])
+                                        if attr[selector[KEY_PROPERTY_FILTER]] == '':
+                                            logging.debug('skip empty')
+                                        else:
+                                            if KEY_SKIPPING in selector and selector[KEY_SKIPPING] in attr[selector[KEY_PROPERTY_FILTER]]:
+                                                logging.debug('skip: ' + attr[selector[KEY_PROPERTY_FILTER]])
+                                            else:
+                                                results.append(attr[selector[KEY_PROPERTY_FILTER]])
                             else:
+                                logging.error('key is not inside')
                                 results.extend(next_nodes)
                             return results
                         else:
                             # only selected index
-                            results.extend(self.node_selector(next_nodes[index], selector))
-                            return results
+                            try:
+                                results.extend(self.node_selector(next_nodes[index], selector))
+                                return results
+                            except IndexError:
+                                logging.error('IndexError: list index out of range')
+                                logging.error('nodes: ' + str(next_nodes))
+                                logging.error('index: ' + str(index))
+                                logging.error('selector: ' + str(selector))
+                                logging.error('results: ' + str(results))
+                                logging.error('node: ' + str(node))
+                                return []
                     else:
                         next_node = node.find_element_by_xpath(selector[KEY_SELECTOR])
                         results.extend(self.node_selector(next_node, selector))
@@ -120,6 +199,8 @@ class ContentScraper:
             # element not found
             return results
         return results
+    
+    # close driver connection
     def close(self):
         logging.debug('close driver connection')
         self.driver.close()
