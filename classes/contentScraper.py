@@ -184,11 +184,8 @@ class ContentScraper:
                                 return results
                             except IndexError:
                                 logging.error('IndexError: list index out of range')
-                                logging.error('nodes: ' + str(next_nodes))
-                                logging.error('index: ' + str(index))
-                                logging.error('selector: ' + str(selector))
-                                logging.error('results: ' + str(results))
-                                logging.error('node: ' + str(node))
+                                logging.error('nodes: ' + str(next_nodes) + ', index: ' + str(index)+', selector: ' + str(selector))
+                                logging.error('node: ' + str(node) + ', results: ' + str(results))
                                 return []
                     else:
                         next_node = node.find_element_by_xpath(selector[KEY_SELECTOR])
