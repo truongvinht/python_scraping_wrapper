@@ -10,8 +10,8 @@ from selenium.webdriver.remote.webelement import WebElement
 
 # Scraping Tool
 class ContentScraper:
-    # init with json-format
-    def __init__(self):
+    # init with default download location
+    def __init__(self, folder = "./"):
         logging.debug('init ContentScraper')
 
         # json configuration map for scraping
@@ -23,7 +23,7 @@ class ContentScraper:
         options.add_argument("--disable-setuid-sandbox")
         options.add_argument("--disable-extensions")
         options.add_experimental_option("prefs", {
-            "download.default_directory": "./tmp/",
+            "download.default_directory": folder,
             "download.prompt_for_download": False,
             "download.directory_upgrade": True,
             "safebrowsing_for_trusted_sources_enabled": False,
@@ -47,7 +47,9 @@ class ContentScraper:
         self.driver.find_element_by_xpath(pwdField).send_keys(pwd)
 
         self.click_xpath(submitField)
-    
+    # wait and do nothing
+    def wait(self, duration):
+        time.sleep(duration)
     # remove all cookies
     def clear_cookies(self):
         self.driver.delete_all_cookies()
@@ -184,8 +186,8 @@ class ContentScraper:
                                 return results
                             except IndexError:
                                 logging.error('IndexError: list index out of range')
-                                logging.error('nodes: ' + str(next_nodes) + ', index: ' + str(index)+', selector: ' + str(selector))
-                                logging.error('node: ' + str(node) + ', results: ' + str(results))
+                                logging.debug('nodes: ' + str(next_nodes) + ', index: ' + str(index)+', selector: ' + str(selector))
+                                logging.debug('node: ' + str(node) + ', results: ' + str(results))
                                 return []
                     else:
                         next_node = node.find_element_by_xpath(selector[KEY_SELECTOR])
